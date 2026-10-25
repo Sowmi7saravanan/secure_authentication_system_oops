@@ -1,66 +1,16 @@
 #include "User.h"
-#include <iostream>
 
-using namespace std;
+User::User(std::string uname, std::string pwd, std::string mail, std::string r)
+    : username(uname), password(pwd), email(mail), role(r) {}
 
-// Constructor
-User::User(int id, string name, string pass) {
-    userId = id;
-    username = name;
-    password = pass;
+std::string User::getUsername() const { return username; }
+std::string User::getEmail() const { return email; }
+std::string User::getRole() const { return role; }
 
-    failedAttempts = 0;
-    isLocked = false;
+bool User::checkPassword(std::string pwd) const {
+    return password == pwd;
 }
 
-// Getter for User ID
-int User::getUserId() const {
-    return userId;
-}
-
-// Getter for Username
-string User::getUsername() const {
-    return username;
-}
-
-// Check password
-bool User::checkPassword(string enteredPassword) {
-    return password == enteredPassword;
-}
-
-// Change password
-void User::changePassword(string newPassword) {
-    password = newPassword;
-}
-
-// Check if account is locked
-bool User::getIsLocked() const {
-    return isLocked;
-}
-
-// Record failed login attempt
-void User::recordFailedAttempt() {
-
-    failedAttempts++;
-
-    if (failedAttempts >= 3) {
-        isLocked = true;
-    }
-}
-
-// Reset failed attempts after successful login
-void User::resetFailedAttempts() {
-    failedAttempts = 0;
-}
-
-// Unlock account
-void User::unlockAccount() {
-    isLocked = false;
-    failedAttempts = 0;
-}
-
-// Display user information
-void User::displayUser() const {
-    cout << "User ID: " << userId << endl;
-    cout << "Username: " << username << endl;
+void User::setPassword(std::string newPwd) {
+    password = newPwd;
 }

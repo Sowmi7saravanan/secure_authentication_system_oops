@@ -1,27 +1,24 @@
-#ifndef USERMANAGER_H
-#define USERMANAGER_H
+#ifndef USER_MANAGER_H
+#define USER_MANAGER_H
 
-#include <vector>
-#include <memory>
 #include "User.h"
-
-using namespace std;
+#include <map>
+#include <string>
 
 class UserManager {
 private:
-    vector<shared_ptr<User>> users;
-    int nextUserId;
-
-    bool usernameExists(string username);
-    bool isValidPassword(string password);
+    std::map<std::string, User*> users;
+    std::map<std::string, std::string> otpStore;
 
 public:
-    UserManager();
-
-    void registerUser(string username, string password);
-
-    bool loginUser(string username, string password);
-
+    ~UserManager();
+    void registerUser(std::string username, std::string password, std::string email, std::string role);
+    User* loginUser(std::string username, std::string password);
+    
+    void generateAndSendOTP(std::string username);
+    bool verifyOTP(std::string username, std::string otpInput);
+    void recoverPassword(std::string username, std::string otpInput, std::string newPassword);
+    
     void displayAllUsers();
 };
 

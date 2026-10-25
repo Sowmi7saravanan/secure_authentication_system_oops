@@ -5,10 +5,8 @@
 
 class Admin : public User {
 public:
-    Admin(int id, string name, string pass);
-
-    string getRole() const override;
-    void showDashboard() const override;
+    Admin(std::string uname, std::string pwd, std::string mail);
+    void displayDashboard() override;
 };
 
 #endif

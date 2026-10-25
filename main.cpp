@@ -1,89 +1,76 @@
 #include <iostream>
+#include <limits>
 #include "UserManager.h"
-
-using namespace std;
+#include "AuthExceptions.h"
 
 int main() {
-
-    UserManager userManager;
-
+    UserManager manager;
     int choice;
 
-    while (true) {
+    do {
+        std::cout << "\n=== Secure Authentication System ===\n";
+        std::cout << "1. Register\n2. Login (Role Access & OTP)\n3. Forgot Password (OTP Recovery)\n4. Display All Users\n5. Exit\n";
+        std::cout << "Enter choice: ";
+        std::cin >> choice;
 
-        cout << "\n===== SECURE AUTHENTICATION SYSTEM =====\n";
-        cout << "1. Register User\n";
-        cout << "2. Login\n";
-        cout << "3. Display All Users\n";
-        cout << "4. Exit\n";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-        cout << "Enter your choice: ";
-        cin >> choice;
+        try {
+            if (choice == 1) {
+                std::string uname, pwd, email, role;
+                std::cout << "Enter username: "; std::cin >> uname;
+                std::cout << "Enter password: "; std::cin >> pwd;
+                std::cout << "Enter email: "; std::cin >> email;
+                std::cout << "Enter role (admin/user): "; std::cin >> role;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                
+                manager.registerUser(uname, pwd, email, role);
+                std::cout << "Registration successful!\n";
 
-        if (choice == 1) {
+            } else if (choice == 2) {
+                std::string uname, pwd;
+                std::cout << "Enter username: "; std::cin >> uname;
+                std::cout << "Enter password: "; std::cin >> pwd;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-    string username;
-    string password;
+                User* loggedInUser = manager.loginUser(uname, pwd);
+                if (loggedInUser) {
+                    std::cout << "Credentials verified! Sending secondary OTP...\n";
+                    manager.generateAndSendOTP(uname);
+                    
+                    std::string otp;
+                    std::cout << "Enter the OTP sent to your email: ";
+                    std::cin >> otp;
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-    // Keep asking until username is valid
-    while (true) {
-        cout << "Enter username: ";
-        cin >> username;
+                    if (manager.verifyOTP(uname, otp)) {
+                        std::cout << "Login fully successful! Welcome, " << loggedInUser->getUsername() << "\n";
+                        loggedInUser->displayDashboard(); // Opens interactive admin/user dashboard loop
+                    }
+                }
 
-        if (username.length() < 3) {
-            cout << "Username must contain at least 3 characters!" << endl;
-        }
-        else {
-            break;
-        }
-    }
+            } else if (choice == 3) {
+                std::string uname, otp, newPwd;
+                std::cout << "Enter your username for recovery: "; std::cin >> uname;
+                
+                manager.generateAndSendOTP(uname);
+                
+                std::cout << "Enter OTP received: "; std::cin >> otp;
+                std::cout << "Enter new password: "; std::cin >> newPwd;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                
+                manager.recoverPassword(uname, otp, newPwd);
 
-    // Keep asking until password is valid
-    while (true) {
-        cout << "Enter password: ";
-        cin >> password;
-
-        if (password.length() < 6) {
-            cout << "Password must contain at least 6 characters!" << endl;
-        }
-        else {
-            break;
-        }
-    }
-
-    userManager.registerUser(username, password);
-}
-
-        else if (choice == 2) {
-
-            string username;
-            string password;
-
-            cout << "Enter username: ";
-            cin >> username;
-
-            cout << "Enter password: ";
-            cin >> password;
-
-            userManager.loginUser(username, password);
-        }
-
-        else if (choice == 3) {
-
-            userManager.displayAllUsers();
-        }
-
-        else if (choice == 4) {
-
-            cout << "Exiting program..." << endl;
-            break;
+            } else if (choice == 4) {
+                manager.displayAllUsers();
+            }
+        } catch (const AuthException& e) {
+            std::cout << e.what() << '\n';
+        } catch (const std::exception& e) {
+            std::cout << "An unexpected error occurred: " << e.what() << '\n';
         }
 
-        else {
-
-            cout << "Invalid choice!" << endl;
-        }
-    }
+    } while (choice != 5);
 
     return 0;
 }

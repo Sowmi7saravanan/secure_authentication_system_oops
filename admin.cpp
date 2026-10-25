@@ -1,18 +1,29 @@
-#include "Admin.h"
+#include "admin.h"
 #include <iostream>
+#include <limits>
 
-using namespace std;
+Admin::Admin(std::string uname, std::string pwd, std::string mail)
+    : User(uname, pwd, mail, "Admin") {}
 
-Admin::Admin(int id, string name, string pass)
-    : User(id, name, pass) {
-}
+void Admin::displayDashboard() {
+    int adminChoice;
+    do {
+        std::cout << "\n=== [Admin Dashboard] ===\n";
+        std::cout << "1. Manage System Configurations\n";
+        std::cout << "2. View All Security Logs\n";
+        std::cout << "3. Logout\n";
+        std::cout << "Enter admin option: ";
+        std::cin >> adminChoice;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-string Admin::getRole() const {
-    return "Admin";
-}
-
-void Admin::showDashboard() const {
-    cout << "\n===== ADMIN DASHBOARD =====\n";
-    cout << "Welcome Admin, " << username << "!\n";
-    cout << "Role: " << getRole() << endl;
+        if (adminChoice == 1) {
+            std::cout << "\n[System Config]: All security policies and user encryption settings are optimal.\n";
+        } else if (adminChoice == 2) {
+            std::cout << "\n[Security Logs]: No unauthorized login attempts detected.\n";
+        } else if (adminChoice == 3) {
+            std::cout << "Logging out of Admin Dashboard...\n";
+        } else {
+            std::cout << "Invalid option! Try again.\n";
+        }
+    } while (adminChoice != 3);
 }

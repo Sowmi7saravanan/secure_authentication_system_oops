@@ -1,135 +1,79 @@
 #include "UserManager.h"
-#include "NormalUser.h"
 #include "Admin.h"
+#include "NormalUser.h"
+#include "AuthExceptions.h"
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 
-using namespace std;
-
-UserManager::UserManager() {
-
-    nextUserId = 1;
-
-    shared_ptr<User> admin =
-        make_shared<Admin>(
-            nextUserId,
-            "admin",
-            "admin123"
-        );
-
-    users.push_back(admin);
-
-    nextUserId++;
+UserManager::~UserManager() {
+    for (auto& pair : users) {
+        delete pair.second;
+    }
+    users.clear();
 }
 
-bool UserManager::usernameExists(string username) {
+void UserManager::registerUser(std::string username, std::string password, std::string email, std::string role) {
+    if (users.find(username) != users.end()) {
+        throw UserAlreadyExistsException();
+    }
 
-    for (const shared_ptr<User>& user : users) {
+    if (role == "admin" || role == "Admin") {
+        users[username] = new Admin(username, password, email);
+    } 
+    else if (role == "user" || role == "User") {
+        users[username] = new NormalUser(username, password, email);
+    } 
+    else {
+        throw AuthException("Error: Invalid role! Please enter 'admin' or 'user'.");
+    }
+}
 
-        if (user->getUsername() == username) {
-            return true;
+User* UserManager::loginUser(std::string username, std::string password) {
+    auto it = users.find(username);
+    if (it == users.end() || !it->second->checkPassword(password)) {
+        throw InvalidCredentialsException();
+    }
+    return it->second;
+}
+
+void UserManager::generateAndSendOTP(std::string username) {
+    if (users.find(username) == users.end()) {
+        throw AuthException("Error: Username not found!");
+    }
+    
+    srand(static_cast<unsigned int>(time(0)));
+    int otpNum = 1000 + rand() % 9000;
+    std::string otpStr = std::to_string(otpNum);
+    
+    otpStore[username] = otpStr;
+    
+    std::cout << "\n[SIMULATED SMS/EMAIL SERVICE] OTP sent to " << users[username]->getEmail() 
+              << " -> CODE: [ " << otpStr << " ]\n";
+}
+
+bool UserManager::verifyOTP(std::string username, std::string otpInput) {
+    auto it = otpStore.find(username);
+    if (it != otpStore.end() && it->second == otpInput) {
+        otpStore.erase(username);
+        return true;
+    }
+    throw InvalidOTPException();
+}
+
+void UserManager::recoverPassword(std::string username, std::string otpInput, std::string newPassword) {
+    if (verifyOTP(username, otpInput)) {
+        auto it = users.find(username);
+        if (it != users.end()) {
+            it->second->setPassword(newPassword);
+            std::cout << "Password successfully recovered and updated!\n";
         }
     }
-
-    return false;
-}
-
-bool UserManager::isValidPassword(string password) {
-
-    if (password.length() < 6) {
-        return false;
-    }
-
-    return true;
-}
-
-void UserManager::registerUser(string username, string password) {
-
-    if (username.length() < 3) {
-        cout << "Username must contain at least 3 characters!" << endl;
-        return;
-    }
-
-    if (usernameExists(username)) {
-        cout << "Username already exists!" << endl;
-        return;
-    }
-
-    if (!isValidPassword(password)) {
-        cout << "Password must contain at least 6 characters!" << endl;
-        return;
-    }
-
-    shared_ptr<User> newUser =
-        make_shared<NormalUser>(
-            nextUserId,
-            username,
-            password
-        );
-
-    users.push_back(newUser);
-
-    cout << "Registration successful!" << endl;
-    cout << "Your User ID is: " << nextUserId << endl;
-
-    nextUserId++;
-}
-
-bool UserManager::loginUser(string username, string password) {
-
-    for (shared_ptr<User>& user : users) {
-
-        if (user->getUsername() == username) {
-
-            if (user->getIsLocked()) {
-                cout << "Account is locked! Contact administrator." << endl;
-                return false;
-            }
-
-            if (user->checkPassword(password)) {
-
-                user->resetFailedAttempts();
-
-                cout << "Login successful!" << endl;
-
-                user->showDashboard();
-
-                return true;
-            }
-            else {
-
-                user->recordFailedAttempt();
-
-                cout << "Incorrect password!" << endl;
-
-                if (user->getIsLocked()) {
-                    cout << "Too many failed attempts. Account locked!" << endl;
-                }
-
-                return false;
-            }
-        }
-    }
-
-    cout << "User not found!" << endl;
-
-    return false;
 }
 
 void UserManager::displayAllUsers() {
-
-    if (users.empty()) {
-        cout << "No users registered yet." << endl;
-        return;
-    }
-
-    cout << "\n----- Registered Users -----\n";
-
-    for (const shared_ptr<User>& user : users) {
-
-        user->displayUser();
-
-        cout << "Role: " << user->getRole() << endl;
-
-        cout << "----------------------------\n";
+    std::cout << "\n--- Registered Users List ---\n";
+    for (const auto& pair : users) {
+        std::cout << "Username: " << pair.first << " | Role: " << pair.second->getRole() << " | Email: " << pair.second->getEmail() << "\n";
     }
 }
